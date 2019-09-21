@@ -103,6 +103,17 @@ class Ising(object):
 
         return nchanges
 
+    def gradient_descent_step(self):
+        alpha = self.T ** -1
+        oh = (8 * np.exp(-2 * alpha) + 3 * np.exp(-3 * alpha)) / (4 * np.exp(-alpha) + 2 * np.exp(-3 * alpha))
+        o = -1 * (2 * np.exp(-alpha) - 3 * np.exp(-3 * alpha)) / (4 * np.exp(-alpha) + 2 * np.exp(-3 * alpha))
+        de_da = 2 * oh - 2 * self.E * o
+        print(de_da)
+        print(self.T)
+        print(f'energy is {self.E}')
+        alpha = alpha - 0.001 * de_da
+        self.T = alpha ** -1
+
 
 L = 10
 Nwarmup = 100
@@ -124,6 +135,7 @@ for i in range(Nsteps):
         naccept += S.metropolis()
     E[i] = S.E
     M[i] = abs(S.Mtot)
+    S.gradient_descent_step()
 
 E /= S.N
 M /= S.N
@@ -133,7 +145,7 @@ E2t = np.sum(E ** 2) / Nsteps
 Mt = np.sum(M) / Nsteps
 M2t = np.sum(M ** 2) / Nsteps
 
-print("T = ", Temp)
+print("T = ", S.T)
 print("<E>/N = ", Et)
 print("<E^2>/N = ", E2t)
 print("<M>/N = ", Mt)
@@ -150,7 +162,7 @@ pyplot.plot(np.arange(0, Nsteps, 1), M, ls='-', c='red')
 pyplot.xlabel("Iteration")
 pyplot.ylabel("Magnetization")
 
-T = np.arange(0.2, 8, 0.2)
+T = np.arange(0.1, 8, 0.05)
 
 Mt = np.zeros(T.size)
 Et = np.zeros(T.size)
@@ -175,7 +187,7 @@ for t in T:
         E2t[n] += S.E ** 2
         M2t[n] += abs(S.Mtot) ** 2
 
-    print(t, Mt[n] / Nsteps / S.N)
+    print(t, Mt[n] / Nsteps / S.N, S.E)
     n += 1
 
 Mt /= float(Nsteps * S.N)
@@ -184,3 +196,9 @@ E2t /= float(Nsteps * S.N * S.N)
 M2t /= float(Nsteps * S.N * S.N)
 ErrorE = np.sqrt((E2t - Et ** 2) / Nsteps)
 ErrorM = np.sqrt((M2t - Mt ** 2) / Nsteps)
+
+pyplot.plot(T, Et, ls='-', c='blue')
+#pyplot.errorbar(T, Et, yerr=[ErrorE, ErrorE], fmt='--o')
+pyplot.ylabel("Energy")
+pyplot.xlabel("Temperature")
+pyplot.show()
